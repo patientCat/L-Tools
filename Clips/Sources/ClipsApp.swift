@@ -94,6 +94,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     let clipboardService = ClipboardService()
     var historyStore: HistoryStore!
+    let kvStore = KeyValueStore.shared
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Initialize Core Services
@@ -118,14 +119,65 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 请求辅助功能权限（用于全局快捷键）
         requestAccessibilityPermission()
         
+        // 设置应用菜单（包含快捷键）
+        setupMainMenu()
+        
         // 激活应用
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
     }
     
+    private func setupMainMenu() {
+        let mainMenu = NSMenu()
+        
+        // 应用菜单
+        let appMenu = NSMenu()
+        let appMenuItem = NSMenuItem()
+        appMenuItem.submenu = appMenu
+        
+        appMenu.addItem(NSMenuItem(title: "关于 L-Tools", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: ""))
+        appMenu.addItem(NSMenuItem.separator())
+        appMenu.addItem(NSMenuItem(title: "隐藏 L-Tools", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h"))
+        appMenu.addItem(NSMenuItem(title: "隐藏其他", action: #selector(NSApplication.hideOtherApplications(_:)), keyEquivalent: ""))
+        appMenu.addItem(NSMenuItem(title: "显示全部", action: #selector(NSApplication.unhideAllApplications(_:)), keyEquivalent: ""))
+        appMenu.addItem(NSMenuItem.separator())
+        appMenu.addItem(NSMenuItem(title: "退出 L-Tools", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        
+        mainMenu.addItem(appMenuItem)
+        
+        // 文件菜单
+        let fileMenu = NSMenu(title: "文件")
+        let fileMenuItem = NSMenuItem()
+        fileMenuItem.submenu = fileMenu
+        
+        let closeItem = NSMenuItem(title: "关闭窗口", action: #selector(closeCurrentWindow), keyEquivalent: "w")
+        closeItem.target = self
+        fileMenu.addItem(closeItem)
+        
+        mainMenu.addItem(fileMenuItem)
+        
+        // 窗口菜单
+        let windowMenu = NSMenu(title: "窗口")
+        let windowMenuItem = NSMenuItem()
+        windowMenuItem.submenu = windowMenu
+        
+        windowMenu.addItem(NSMenuItem(title: "最小化", action: #selector(NSWindow.miniaturize(_:)), keyEquivalent: "m"))
+        
+        mainMenu.addItem(windowMenuItem)
+        
+        NSApp.mainMenu = mainMenu
+    }
+    
+    @objc func closeCurrentWindow() {
+        if let window = NSApp.keyWindow {
+            window.close()
+        }
+    }
+    
     private func createMainWindow() {
         let menuView = MenuBarView(
             historyStore: historyStore,
+            kvStore: kvStore,
             onCopy: { [weak self] content in
                 self?.clipboardService.copyToClipboard(content)
             },
@@ -137,14 +189,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hostingController = NSHostingController(rootView: menuView)
         
         mainWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 450),
+            contentRect: NSRect(x: 0, y: 0, width: 450, height: 550),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
         
         mainWindow?.contentViewController = hostingController
-        mainWindow?.title = "Clips"
+        mainWindow?.title = "L-Tools"
         mainWindow?.center()
         mainWindow?.makeKeyAndOrderFront(nil)
     }
@@ -159,11 +211,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         // 使用系统图标
-        if let image = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: "Clips") {
+        if let image = NSImage(systemSymbolName: "wrench.and.screwdriver", accessibilityDescription: "L-Tools") {
             image.isTemplate = true
             button.image = image
         } else {
-            button.title = "C"
+            button.title = "L"
         }
         
         button.action = #selector(statusItemClicked(_:))
@@ -172,6 +224,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 创建 Popover
         let menuView = MenuBarView(
             historyStore: historyStore,
+            kvStore: kvStore,
             onCopy: { [weak self] content in
                 self?.clipboardService.copyToClipboard(content)
                 self?.closePopover(sender: nil)
@@ -182,7 +235,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         )
         
         popover = NSPopover()
-        popover.contentSize = NSSize(width: 300, height: 400)
+        popover.contentSize = NSSize(width: 450, height: 550)
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: menuView)
         
@@ -198,10 +251,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func requestAccessibilityPermission() {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
-        let trusted = AXIsProcessTrustedWithOptions(options as CFDictionary)
+        // 先检查是否已授权，不弹窗
+        let trusted = AXIsProcessTrusted()
         if !trusted {
+            // 只有未授权时才提示（设置 prompt: true）
+            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
+            _ = AXIsProcessTrustedWithOptions(options as CFDictionary)
             print("⚠️ 需要辅助功能权限才能使用全局快捷键")
+        } else {
+            print("✅ 辅助功能权限已授权")
         }
     }
     
@@ -214,6 +272,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let menuView = MenuBarView(
             historyStore: historyStore,
+            kvStore: kvStore,
             onCopy: { [weak self] content in
                 self?.clipboardService.copyToClipboard(content)
                 self?.closeFloatingWindow()
@@ -229,8 +288,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let mouseLocation = NSEvent.mouseLocation
         let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 600)
         
-        let windowWidth: CGFloat = 320
-        let windowHeight: CGFloat = 420
+        let windowWidth: CGFloat = 450
+        let windowHeight: CGFloat = 550
         
         // 计算窗口位置（在鼠标附近或屏幕中心）
         var windowX = mouseLocation.x - windowWidth / 2

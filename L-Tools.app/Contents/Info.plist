@@ -2,10 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleExecutable</key><string>ClipsApp</string>
-    <key>CFBundleIdentifier</key><string>com.example.Clips</string>
-    <key>CFBundleName</key><string>Clips</string>
-    <key>CFBundleDisplayName</key><string>Clips</string>
+    <key>CFBundleExecutable</key><string>LToolsApp</string>
+    <key>CFBundleIdentifier</key><string>com.luke.LTools</string>
+    <key>CFBundleName</key><string>L-Tools</string>
+    <key>CFBundleDisplayName</key><string>L-Tools</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundleShortVersionString</key><string>1.0</string>
     <key>CFBundleVersion</key><string>1</string>
     <key>CFBundlePackageType</key><string>APPL</string>
