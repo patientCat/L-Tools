@@ -2,7 +2,7 @@
 
 # 编译器和标志
 SWIFTC = swiftc
-SWIFT_FLAGS = -O -framework AppKit -framework Carbon
+SWIFT_FLAGS = -O -framework AppKit -framework Carbon -framework UserNotifications
 
 # 目录
 SRC_DIR = Clips/Sources
@@ -16,7 +16,10 @@ SOURCES = $(SRC_DIR)/Models.swift \
           $(SRC_DIR)/ClipboardService.swift \
           $(SRC_DIR)/HistoryStore.swift \
           $(SRC_DIR)/KeyValueStore.swift \
+          $(SRC_DIR)/PixelTheme.swift \
           $(SRC_DIR)/KeyValueView.swift \
+          $(SRC_DIR)/RestReminderStore.swift \
+          $(SRC_DIR)/RestReminderView.swift \
           $(SRC_DIR)/MenuBarView.swift \
           $(SRC_DIR)/ClipsApp.swift
 

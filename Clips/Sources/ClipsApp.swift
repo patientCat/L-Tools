@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import Carbon
+import UserNotifications
 
 @main
 enum ClipsAppMain {
@@ -95,6 +96,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let clipboardService = ClipboardService()
     var historyStore: HistoryStore!
     let kvStore = KeyValueStore.shared
+    let reminderStore = RestReminderStore.shared
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Initialize Core Services
@@ -178,6 +180,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menuView = MenuBarView(
             historyStore: historyStore,
             kvStore: kvStore,
+            reminderStore: reminderStore,
             onCopy: { [weak self] content in
                 self?.clipboardService.copyToClipboard(content)
             },
@@ -228,6 +231,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menuView = MenuBarView(
             historyStore: historyStore,
             kvStore: kvStore,
+            reminderStore: reminderStore,
             onCopy: { [weak self] content in
                 self?.clipboardService.copyToClipboard(content)
                 self?.closePopover(sender: nil)
@@ -280,6 +284,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menuView = MenuBarView(
             historyStore: historyStore,
             kvStore: kvStore,
+            reminderStore: reminderStore,
             onCopy: { [weak self] content in
                 self?.clipboardService.copyToClipboard(content)
                 self?.closeFloatingWindow()

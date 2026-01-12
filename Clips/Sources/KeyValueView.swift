@@ -15,109 +15,130 @@ struct KeyValueView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // 标题栏
+            // Header
             HStack {
-                Text("密钥存储 (\(kvStore.items.count))")
-                    .font(.headline)
-                    .padding(.leading)
+                Text("> KEY_VAULT")
+                    .font(PixelTheme.pixelFontBold(size: 12))
+                    .foregroundColor(PixelTheme.primary)
+                Text("[\(kvStore.items.count)]")
+                    .font(PixelTheme.pixelFont(size: 12))
+                    .foregroundColor(PixelTheme.accent)
                 Spacer()
                 Button(action: { showAddSheet = true }) {
-                    Image(systemName: "plus")
+                    Text("[+ADD]")
+                        .font(PixelTheme.pixelFont(size: 11))
+                        .foregroundColor(PixelTheme.primary)
                 }
                 .buttonStyle(.plain)
-                .padding(.trailing, 8)
-                Button("清空") {
-                    kvStore.clear()
+                Button(action: { kvStore.clear() }) {
+                    Text("[CLR]")
+                        .font(PixelTheme.pixelFont(size: 11))
+                        .foregroundColor(PixelTheme.danger)
                 }
                 .buttonStyle(.plain)
-                .foregroundColor(.secondary)
-                .padding(.trailing)
+                .padding(.leading, 8)
             }
+            .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color(NSColor.controlBackgroundColor))
             
-            // 标签过滤栏
+            // Tag filter bar
             if !kvStore.allTags.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
-                        // 全部标签
-                        TagButton(
-                            tag: "全部",
+                        PixelTagButton(
+                            tag: "ALL",
                             isSelected: selectedTag == nil,
                             action: { selectedTag = nil }
                         )
                         
                         ForEach(kvStore.allTags, id: \.self) { tag in
-                            TagButton(
-                                tag: tag,
+                            PixelTagButton(
+                                tag: tag.uppercased(),
                                 isSelected: selectedTag == tag,
                                 action: { selectedTag = selectedTag == tag ? nil : tag }
                             )
                         }
                     }
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                 }
-                .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                .background(PixelTheme.headerBackground)
             }
             
-            // 搜索框
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
-                TextField("搜索 Key、Value、描述或标签...", text: $searchText)
+            // Search bar
+            HStack(spacing: 8) {
+                Text(">")
+                    .font(PixelTheme.pixelFont(size: 13))
+                    .foregroundColor(PixelTheme.primary)
+                TextField("SEARCH KEYS...", text: $searchText)
+                    .font(PixelTheme.pixelFont(size: 13))
+                    .foregroundColor(PixelTheme.textPrimary)
                     .textFieldStyle(.plain)
                 if !searchText.isEmpty {
                     Button(action: { searchText = "" }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.secondary)
+                        Text("[X]")
+                            .font(PixelTheme.pixelFont(size: 11))
+                            .foregroundColor(PixelTheme.danger)
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(8)
-            .background(Color(NSColor.textBackgroundColor))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(PixelTheme.cardBackground)
+            .pixelBorder()
+            .padding(.horizontal, 8)
             
-            Divider()
+            PixelDivider()
+                .padding(.vertical, 4)
             
             if filteredItems.isEmpty {
-                VStack {
+                VStack(spacing: 8) {
                     Spacer()
+                    Text("╔══════════════════╗")
+                        .font(PixelTheme.pixelFont(size: 12))
+                        .foregroundColor(PixelTheme.border)
                     if searchText.isEmpty && selectedTag == nil {
-                        Image(systemName: "key")
-                            .font(.largeTitle)
-                            .foregroundColor(.secondary)
-                            .padding(.bottom, 8)
-                        Text("暂无存储的密钥")
-                            .foregroundColor(.secondary)
-                        Text("点击 + 添加新的 Key-Value")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        Text("║   VAULT EMPTY    ║")
+                            .font(PixelTheme.pixelFont(size: 12))
+                            .foregroundColor(PixelTheme.textSecondary)
+                        Text("║  [+] TO ADD KEY  ║")
+                            .font(PixelTheme.pixelFont(size: 12))
+                            .foregroundColor(PixelTheme.textMuted)
                     } else {
-                        Text("未找到匹配内容")
-                            .foregroundColor(.secondary)
+                        Text("║  NO MATCH FOUND  ║")
+                            .font(PixelTheme.pixelFont(size: 12))
+                            .foregroundColor(PixelTheme.textSecondary)
                     }
+                    Text("╚══════════════════╝")
+                        .font(PixelTheme.pixelFont(size: 12))
+                        .foregroundColor(PixelTheme.border)
                     Spacer()
                 }
                 .frame(maxHeight: .infinity)
             } else {
-                List {
-                    ForEach(filteredItems) { item in
-                        KeyValueRow(
-                            item: item,
-                            onCopy: { onCopyValue(item.value) },
-                            onEdit: { editingItem = item },
-                            onDelete: { kvStore.remove(id: item.id) }
-                        )
+                ScrollView {
+                    LazyVStack(spacing: 4) {
+                        ForEach(filteredItems) { item in
+                            PixelKeyValueRow(
+                                item: item,
+                                onCopy: { onCopyValue(item.value) },
+                                onEdit: { editingItem = item },
+                                onDelete: { kvStore.remove(id: item.id) }
+                            )
+                        }
                     }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
                 }
             }
         }
+        .background(PixelTheme.background)
         .sheet(isPresented: $showAddSheet) {
-            AddKeyValueSheet(kvStore: kvStore, isPresented: $showAddSheet)
+            PixelAddKeyValueSheet(kvStore: kvStore, isPresented: $showAddSheet)
         }
         .sheet(item: $editingItem) { item in
-            EditKeyValueSheet(kvStore: kvStore, item: item, isPresented: Binding(
+            PixelEditKeyValueSheet(kvStore: kvStore, item: item, isPresented: Binding(
                 get: { editingItem != nil },
                 set: { if !$0 { editingItem = nil } }
             ))
@@ -125,8 +146,8 @@ struct KeyValueView: View {
     }
 }
 
-// MARK: - Tag Button
-struct TagButton: View {
+// MARK: - Pixel Tag Button
+struct PixelTagButton: View {
     let tag: String
     let isSelected: Bool
     var action: () -> Void
@@ -134,19 +155,25 @@ struct TagButton: View {
     var body: some View {
         Button(action: action) {
             Text(tag)
-                .font(.caption)
+                .font(PixelTheme.pixelFont(size: 10))
+                .foregroundColor(isSelected ? PixelTheme.background : PixelTheme.accent)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
-                .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.2))
-                .foregroundColor(isSelected ? .white : .primary)
-                .cornerRadius(12)
+                .background(
+                    Rectangle()
+                        .fill(isSelected ? PixelTheme.accent : PixelTheme.accent.opacity(0.2))
+                )
+                .overlay(
+                    Rectangle()
+                        .stroke(PixelTheme.accent, lineWidth: 1)
+                )
         }
         .buttonStyle(.plain)
     }
 }
 
-// MARK: - Key Value Row
-struct KeyValueRow: View {
+// MARK: - Pixel Key Value Row
+struct PixelKeyValueRow: View {
     let item: KeyValueItem
     var onCopy: () -> Void
     var onEdit: () -> Void
@@ -156,85 +183,87 @@ struct KeyValueRow: View {
     @State private var showValue = false
     
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
                 // Key
                 Text(item.key)
-                    .font(.headline)
+                    .font(PixelTheme.pixelFontBold(size: 13))
+                    .foregroundColor(PixelTheme.accent)
                     .lineLimit(1)
                 
-                // 描述（如果有）
-                if !item.description.isEmpty {
-                    Text(item.description)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                }
+                Spacer()
                 
-                // Value
-                HStack {
-                    if showValue {
-                        Text(item.value)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    } else {
-                        Text(String(repeating: "•", count: min(item.value.count, 12)))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    Button(action: { showValue.toggle() }) {
-                        Image(systemName: showValue ? "eye.slash" : "eye")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-                
-                // 标签
-                if !item.tags.isEmpty {
-                    HStack(spacing: 4) {
-                        ForEach(item.tags, id: \.self) { tag in
-                            Text(tag)
-                                .font(.system(size: 10))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.accentColor.opacity(0.2))
-                                .foregroundColor(.accentColor)
-                                .cornerRadius(8)
+                if isHovering {
+                    HStack(spacing: 8) {
+                        Button(action: onCopy) {
+                            Text("[CPY]")
+                                .font(PixelTheme.pixelFont(size: 10))
+                                .foregroundColor(PixelTheme.secondary)
                         }
+                        .buttonStyle(.plain)
+                        
+                        Button(action: onEdit) {
+                            Text("[EDT]")
+                                .font(PixelTheme.pixelFont(size: 10))
+                                .foregroundColor(PixelTheme.warning)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Button(action: onDelete) {
+                            Text("[DEL]")
+                                .font(PixelTheme.pixelFont(size: 10))
+                                .foregroundColor(PixelTheme.danger)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
             
-            Spacer()
+            // Description
+            if !item.description.isEmpty {
+                Text("> \(item.description)")
+                    .font(PixelTheme.pixelFont(size: 11))
+                    .foregroundColor(PixelTheme.textSecondary)
+                    .lineLimit(1)
+            }
             
-            if isHovering {
-                HStack(spacing: 8) {
-                    Button(action: onCopy) {
-                        Image(systemName: "doc.on.doc")
-                            .foregroundColor(.blue)
+            // Value
+            HStack(spacing: 8) {
+                Text("VAL:")
+                    .font(PixelTheme.pixelFont(size: 11))
+                    .foregroundColor(PixelTheme.textMuted)
+                
+                if showValue {
+                    Text(item.value)
+                        .font(PixelTheme.pixelFont(size: 11))
+                        .foregroundColor(PixelTheme.primary)
+                        .lineLimit(1)
+                } else {
+                    Text(String(repeating: "*", count: min(item.value.count, 16)))
+                        .font(PixelTheme.pixelFont(size: 11))
+                        .foregroundColor(PixelTheme.textMuted)
+                }
+                
+                Button(action: { showValue.toggle() }) {
+                    Text(showValue ? "[HIDE]" : "[SHOW]")
+                        .font(PixelTheme.pixelFont(size: 10))
+                        .foregroundColor(PixelTheme.textSecondary)
+                }
+                .buttonStyle(.plain)
+            }
+            
+            // Tags
+            if !item.tags.isEmpty {
+                HStack(spacing: 4) {
+                    ForEach(item.tags, id: \.self) { tag in
+                        PixelTag(text: tag.uppercased(), color: PixelTheme.secondary)
                     }
-                    .buttonStyle(.plain)
-                    .help("复制 Value")
-                    
-                    Button(action: onEdit) {
-                        Image(systemName: "pencil")
-                            .foregroundColor(.orange)
-                    }
-                    .buttonStyle(.plain)
-                    .help("编辑")
-                    
-                    Button(action: onDelete) {
-                        Image(systemName: "trash")
-                            .foregroundColor(.red)
-                    }
-                    .buttonStyle(.plain)
-                    .help("删除")
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(10)
+        .background(isHovering ? PixelTheme.primary.opacity(0.1) : PixelTheme.cardBackground)
+        .pixelBorder(color: isHovering ? PixelTheme.primary : PixelTheme.border, width: 1)
         .contentShape(Rectangle())
         .onHover { hovering in
             isHovering = hovering
@@ -242,8 +271,8 @@ struct KeyValueRow: View {
     }
 }
 
-// MARK: - Add Sheet
-struct AddKeyValueSheet: View {
+// MARK: - Pixel Add Sheet
+struct PixelAddKeyValueSheet: View {
     @ObservedObject var kvStore: KeyValueStore
     @Binding var isPresented: Bool
     
@@ -260,92 +289,128 @@ struct AddKeyValueSheet: View {
     
     var body: some View {
         VStack(spacing: 16) {
-            Text("添加新密钥")
-                .font(.headline)
+            // Header
+            Text("[ ADD NEW KEY ]")
+                .font(PixelTheme.pixelFontBold(size: 16))
+                .foregroundColor(PixelTheme.primary)
             
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Key *")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                TextField("输入 Key（如：github_token）", text: $key)
-                    .textFieldStyle(.roundedBorder)
-            }
+            PixelDivider()
             
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Value *")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                SecureField("输入 Value（如：密码）", text: $value)
-                    .textFieldStyle(.roundedBorder)
-            }
-            
-            VStack(alignment: .leading, spacing: 8) {
-                Text("描述")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                TextField("简要描述（可选）", text: $description)
-                    .textFieldStyle(.roundedBorder)
-            }
-            
-            VStack(alignment: .leading, spacing: 8) {
-                Text("标签")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                TextField("用逗号分隔多个标签（如：工作,GitHub）", text: $tagsText)
-                    .textFieldStyle(.roundedBorder)
+            VStack(alignment: .leading, spacing: 12) {
+                // Key field
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("> KEY *")
+                        .font(PixelTheme.pixelFont(size: 11))
+                        .foregroundColor(PixelTheme.textSecondary)
+                    TextField("ENTER_KEY_NAME", text: $key)
+                        .font(PixelTheme.pixelFont(size: 13))
+                        .foregroundColor(PixelTheme.textPrimary)
+                        .padding(8)
+                        .background(PixelTheme.background)
+                        .pixelBorder()
+                }
                 
-                // 显示已有标签供快速选择
-                if !kvStore.allTags.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 4) {
-                            Text("已有:")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                            ForEach(kvStore.allTags, id: \.self) { tag in
-                                Button(action: {
-                                    if !tags.contains(tag) {
-                                        tagsText = tagsText.isEmpty ? tag : "\(tagsText), \(tag)"
+                // Value field
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("> VALUE *")
+                        .font(PixelTheme.pixelFont(size: 11))
+                        .foregroundColor(PixelTheme.textSecondary)
+                    SecureField("ENTER_SECRET_VALUE", text: $value)
+                        .font(PixelTheme.pixelFont(size: 13))
+                        .foregroundColor(PixelTheme.textPrimary)
+                        .padding(8)
+                        .background(PixelTheme.background)
+                        .pixelBorder()
+                }
+                
+                // Description field
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("> DESC")
+                        .font(PixelTheme.pixelFont(size: 11))
+                        .foregroundColor(PixelTheme.textSecondary)
+                    TextField("OPTIONAL_DESCRIPTION", text: $description)
+                        .font(PixelTheme.pixelFont(size: 13))
+                        .foregroundColor(PixelTheme.textPrimary)
+                        .padding(8)
+                        .background(PixelTheme.background)
+                        .pixelBorder()
+                }
+                
+                // Tags field
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("> TAGS")
+                        .font(PixelTheme.pixelFont(size: 11))
+                        .foregroundColor(PixelTheme.textSecondary)
+                    TextField("TAG1, TAG2, TAG3", text: $tagsText)
+                        .font(PixelTheme.pixelFont(size: 13))
+                        .foregroundColor(PixelTheme.textPrimary)
+                        .padding(8)
+                        .background(PixelTheme.background)
+                        .pixelBorder()
+                    
+                    // Existing tags
+                    if !kvStore.allTags.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 4) {
+                                Text("EXISTING:")
+                                    .font(PixelTheme.pixelFont(size: 10))
+                                    .foregroundColor(PixelTheme.textMuted)
+                                ForEach(kvStore.allTags, id: \.self) { tag in
+                                    Button(action: {
+                                        if !tags.contains(tag) {
+                                            tagsText = tagsText.isEmpty ? tag : "\(tagsText), \(tag)"
+                                        }
+                                    }) {
+                                        PixelTag(text: tag.uppercased(), color: PixelTheme.textSecondary)
                                     }
-                                }) {
-                                    Text(tag)
-                                        .font(.caption2)
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(Color.secondary.opacity(0.2))
-                                        .cornerRadius(6)
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                     }
                 }
             }
             
+            PixelDivider()
+            
+            // Buttons
             HStack {
-                Button("取消") {
-                    isPresented = false
+                Button(action: { isPresented = false }) {
+                    Text("[ CANCEL ]")
+                        .font(PixelTheme.pixelFontBold(size: 12))
+                        .foregroundColor(PixelTheme.textSecondary)
                 }
+                .buttonStyle(PixelButtonStyle(backgroundColor: PixelTheme.cardBackground))
                 .keyboardShortcut(.escape)
                 
                 Spacer()
                 
-                Button("保存") {
+                Button(action: {
                     if !key.isEmpty && !value.isEmpty {
                         kvStore.add(key: key, value: value, description: description, tags: tags)
                         isPresented = false
                     }
+                }) {
+                    Text("[ SAVE ]")
+                        .font(PixelTheme.pixelFontBold(size: 12))
+                        .foregroundColor(key.isEmpty || value.isEmpty ? PixelTheme.textMuted : PixelTheme.background)
                 }
+                .buttonStyle(PixelButtonStyle(
+                    backgroundColor: key.isEmpty || value.isEmpty ? PixelTheme.cardBackground : PixelTheme.primary,
+                    foregroundColor: key.isEmpty || value.isEmpty ? PixelTheme.textMuted : PixelTheme.background
+                ))
                 .keyboardShortcut(.return)
                 .disabled(key.isEmpty || value.isEmpty)
             }
         }
-        .padding()
-        .frame(width: 380)
+        .padding(20)
+        .frame(width: 400)
+        .background(PixelTheme.background)
     }
 }
 
-// MARK: - Edit Sheet
-struct EditKeyValueSheet: View {
+// MARK: - Pixel Edit Sheet
+struct PixelEditKeyValueSheet: View {
     @ObservedObject var kvStore: KeyValueStore
     let item: KeyValueItem
     @Binding var isPresented: Bool
@@ -363,87 +428,123 @@ struct EditKeyValueSheet: View {
     
     var body: some View {
         VStack(spacing: 16) {
-            Text("编辑密钥")
-                .font(.headline)
+            // Header
+            Text("[ EDIT KEY ]")
+                .font(PixelTheme.pixelFontBold(size: 16))
+                .foregroundColor(PixelTheme.warning)
             
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Key *")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                TextField("Key", text: $key)
-                    .textFieldStyle(.roundedBorder)
-            }
+            PixelDivider()
             
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Value *")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                SecureField("Value", text: $value)
-                    .textFieldStyle(.roundedBorder)
-            }
-            
-            VStack(alignment: .leading, spacing: 8) {
-                Text("描述")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                TextField("简要描述（可选）", text: $description)
-                    .textFieldStyle(.roundedBorder)
-            }
-            
-            VStack(alignment: .leading, spacing: 8) {
-                Text("标签")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                TextField("用逗号分隔多个标签", text: $tagsText)
-                    .textFieldStyle(.roundedBorder)
+            VStack(alignment: .leading, spacing: 12) {
+                // Key field
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("> KEY *")
+                        .font(PixelTheme.pixelFont(size: 11))
+                        .foregroundColor(PixelTheme.textSecondary)
+                    TextField("KEY", text: $key)
+                        .font(PixelTheme.pixelFont(size: 13))
+                        .foregroundColor(PixelTheme.textPrimary)
+                        .padding(8)
+                        .background(PixelTheme.background)
+                        .pixelBorder()
+                }
                 
-                // 显示已有标签供快速选择
-                if !kvStore.allTags.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 4) {
-                            Text("已有:")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                            ForEach(kvStore.allTags, id: \.self) { tag in
-                                Button(action: {
-                                    if !tags.contains(tag) {
-                                        tagsText = tagsText.isEmpty ? tag : "\(tagsText), \(tag)"
+                // Value field
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("> VALUE *")
+                        .font(PixelTheme.pixelFont(size: 11))
+                        .foregroundColor(PixelTheme.textSecondary)
+                    SecureField("VALUE", text: $value)
+                        .font(PixelTheme.pixelFont(size: 13))
+                        .foregroundColor(PixelTheme.textPrimary)
+                        .padding(8)
+                        .background(PixelTheme.background)
+                        .pixelBorder()
+                }
+                
+                // Description field
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("> DESC")
+                        .font(PixelTheme.pixelFont(size: 11))
+                        .foregroundColor(PixelTheme.textSecondary)
+                    TextField("DESCRIPTION", text: $description)
+                        .font(PixelTheme.pixelFont(size: 13))
+                        .foregroundColor(PixelTheme.textPrimary)
+                        .padding(8)
+                        .background(PixelTheme.background)
+                        .pixelBorder()
+                }
+                
+                // Tags field
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("> TAGS")
+                        .font(PixelTheme.pixelFont(size: 11))
+                        .foregroundColor(PixelTheme.textSecondary)
+                    TextField("TAG1, TAG2", text: $tagsText)
+                        .font(PixelTheme.pixelFont(size: 13))
+                        .foregroundColor(PixelTheme.textPrimary)
+                        .padding(8)
+                        .background(PixelTheme.background)
+                        .pixelBorder()
+                    
+                    // Existing tags
+                    if !kvStore.allTags.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 4) {
+                                Text("EXISTING:")
+                                    .font(PixelTheme.pixelFont(size: 10))
+                                    .foregroundColor(PixelTheme.textMuted)
+                                ForEach(kvStore.allTags, id: \.self) { tag in
+                                    Button(action: {
+                                        if !tags.contains(tag) {
+                                            tagsText = tagsText.isEmpty ? tag : "\(tagsText), \(tag)"
+                                        }
+                                    }) {
+                                        PixelTag(text: tag.uppercased(), color: PixelTheme.textSecondary)
                                     }
-                                }) {
-                                    Text(tag)
-                                        .font(.caption2)
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(Color.secondary.opacity(0.2))
-                                        .cornerRadius(6)
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                     }
                 }
             }
             
+            PixelDivider()
+            
+            // Buttons
             HStack {
-                Button("取消") {
-                    isPresented = false
+                Button(action: { isPresented = false }) {
+                    Text("[ CANCEL ]")
+                        .font(PixelTheme.pixelFontBold(size: 12))
+                        .foregroundColor(PixelTheme.textSecondary)
                 }
+                .buttonStyle(PixelButtonStyle(backgroundColor: PixelTheme.cardBackground))
                 .keyboardShortcut(.escape)
                 
                 Spacer()
                 
-                Button("保存") {
+                Button(action: {
                     if !key.isEmpty && !value.isEmpty {
                         kvStore.update(id: item.id, key: key, value: value, description: description, tags: tags)
                         isPresented = false
                     }
+                }) {
+                    Text("[ UPDATE ]")
+                        .font(PixelTheme.pixelFontBold(size: 12))
+                        .foregroundColor(key.isEmpty || value.isEmpty ? PixelTheme.textMuted : PixelTheme.background)
                 }
+                .buttonStyle(PixelButtonStyle(
+                    backgroundColor: key.isEmpty || value.isEmpty ? PixelTheme.cardBackground : PixelTheme.warning,
+                    foregroundColor: key.isEmpty || value.isEmpty ? PixelTheme.textMuted : PixelTheme.background
+                ))
                 .keyboardShortcut(.return)
                 .disabled(key.isEmpty || value.isEmpty)
             }
         }
-        .padding()
-        .frame(width: 380)
+        .padding(20)
+        .frame(width: 400)
+        .background(PixelTheme.background)
         .onAppear {
             key = item.key
             value = item.value

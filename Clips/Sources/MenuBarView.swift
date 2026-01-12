@@ -2,13 +2,15 @@ import SwiftUI
 import AppKit
 
 enum ClipsTab: String, CaseIterable {
-    case history = "剪贴板"
-    case keyValue = "密钥"
+    case history = "CLIPS"
+    case keyValue = "KEYS"
+    case reminder = "TIMER"
 }
 
 struct MenuBarView: View {
     @ObservedObject var historyStore: HistoryStore
     @ObservedObject var kvStore: KeyValueStore
+    @ObservedObject var reminderStore: RestReminderStore
     var onCopy: (String) -> Void
     var onCopyImage: ((NSImage) -> Void)?
     var onQuit: () -> Void
@@ -27,127 +29,226 @@ struct MenuBarView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Tab 切换
-            HStack(spacing: 0) {
+            // Pixel-style header
+            HStack {
+                Text("[ L-TOOLS ]")
+                    .font(PixelTheme.pixelFontBold(size: 16))
+                    .foregroundColor(PixelTheme.primary)
+                Spacer()
+                // Decorative pixels
+                HStack(spacing: 2) {
+                    Rectangle().fill(PixelTheme.danger).frame(width: 8, height: 8)
+                    Rectangle().fill(PixelTheme.accent).frame(width: 8, height: 8)
+                    Rectangle().fill(PixelTheme.primary).frame(width: 8, height: 8)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(PixelTheme.headerBackground)
+            
+            PixelDivider(color: PixelTheme.primary)
+            
+            // Tab bar
+            HStack(spacing: 4) {
                 ForEach(ClipsTab.allCases, id: \.self) { tab in
-                    Button(action: { selectedTab = tab }) {
-                        HStack {
-                            Image(systemName: tab == .history ? "doc.on.clipboard" : "key")
-                            Text(tab.rawValue)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(selectedTab == tab ? Color.accentColor.opacity(0.2) : Color.clear)
-                        .cornerRadius(6)
+                    PixelTabButton(
+                        icon: tabIcon(for: tab),
+                        title: tab.rawValue,
+                        isSelected: selectedTab == tab
+                    ) {
+                        selectedTab = tab
                     }
-                    .buttonStyle(.plain)
                 }
                 Spacer()
             }
             .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color(NSColor.controlBackgroundColor))
+            .padding(.vertical, 6)
+            .background(PixelTheme.headerBackground)
             
-            Divider()
+            PixelDivider()
             
-            // 根据选中的 Tab 显示不同内容
-            if selectedTab == .history {
-                historyView
-            } else {
-                KeyValueView(kvStore: kvStore, onCopyValue: onCopy)
+            // Content area
+            ZStack {
+                PixelTheme.background
+                
+                if selectedTab == .history {
+                    historyView
+                } else if selectedTab == .keyValue {
+                    KeyValueView(kvStore: kvStore, onCopyValue: onCopy)
+                } else {
+                    RestReminderView(store: reminderStore)
+                }
             }
             
-            Divider()
+            PixelDivider()
             
+            // Footer
             HStack {
+                Text("> READY_")
+                    .font(PixelTheme.pixelFont(size: 11))
+                    .foregroundColor(PixelTheme.textMuted)
                 Spacer()
-                Button("Quit L-Tools") {
-                    onQuit()
+                Button(action: onQuit) {
+                    Text("[ QUIT ]")
+                        .font(PixelTheme.pixelFont(size: 11))
+                        .foregroundColor(PixelTheme.danger)
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal)
-                .padding(.vertical, 8)
+                .onHover { hovering in
+                    if hovering {
+                        NSCursor.pointingHand.push()
+                    } else {
+                        NSCursor.pop()
+                    }
+                }
             }
-            .background(Color(NSColor.controlBackgroundColor))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(PixelTheme.headerBackground)
         }
+        .background(PixelTheme.background)
         .frame(width: 450, height: 500)
+    }
+    
+    // MARK: - Tab Icon
+    private func tabIcon(for tab: ClipsTab) -> String {
+        switch tab {
+        case .history: return "doc.on.clipboard"
+        case .keyValue: return "key"
+        case .reminder: return "bell"
+        }
     }
     
     // MARK: - History View
     private var historyView: some View {
         VStack(spacing: 0) {
+            // Header
             HStack {
-                Text("剪贴板历史 (\(historyStore.history.count))")
-                    .font(.headline)
-                    .padding(.leading)
+                Text("> CLIPBOARD_HISTORY")
+                    .font(PixelTheme.pixelFontBold(size: 12))
+                    .foregroundColor(PixelTheme.primary)
+                Text("[\(historyStore.history.count)]")
+                    .font(PixelTheme.pixelFont(size: 12))
+                    .foregroundColor(PixelTheme.accent)
                 Spacer()
-                Button("Clear") {
-                    historyStore.clear()
+                Button(action: { historyStore.clear() }) {
+                    Text("[CLR]")
+                        .font(PixelTheme.pixelFont(size: 11))
+                        .foregroundColor(PixelTheme.danger)
                 }
                 .buttonStyle(.plain)
-                .foregroundColor(.secondary)
-                .padding(.trailing)
             }
+            .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color(NSColor.controlBackgroundColor))
             
-            // 搜索框
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
-                TextField("搜索...", text: $searchText)
+            // Search bar
+            HStack(spacing: 8) {
+                Text(">")
+                    .font(PixelTheme.pixelFont(size: 13))
+                    .foregroundColor(PixelTheme.primary)
+                TextField("SEARCH...", text: $searchText)
+                    .font(PixelTheme.pixelFont(size: 13))
+                    .foregroundColor(PixelTheme.textPrimary)
                     .textFieldStyle(.plain)
                 if !searchText.isEmpty {
                     Button(action: { searchText = "" }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.secondary)
+                        Text("[X]")
+                            .font(PixelTheme.pixelFont(size: 11))
+                            .foregroundColor(PixelTheme.danger)
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(8)
-            .background(Color(NSColor.textBackgroundColor))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(PixelTheme.cardBackground)
+            .pixelBorder()
+            .padding(.horizontal, 8)
             
-            Divider()
+            PixelDivider()
+                .padding(.vertical, 4)
             
             if filteredHistory.isEmpty {
-                VStack {
+                VStack(spacing: 8) {
                     Spacer()
+                    Text("╔══════════════════╗")
+                        .font(PixelTheme.pixelFont(size: 12))
+                        .foregroundColor(PixelTheme.border)
                     if searchText.isEmpty {
-                        Text("暂无剪贴板记录")
-                            .foregroundColor(.secondary)
-                        Text("复制内容后会自动显示")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        Text("║  NO DATA FOUND   ║")
+                            .font(PixelTheme.pixelFont(size: 12))
+                            .foregroundColor(PixelTheme.textSecondary)
+                        Text("║  COPY TO START   ║")
+                            .font(PixelTheme.pixelFont(size: 12))
+                            .foregroundColor(PixelTheme.textMuted)
                     } else {
-                        Text("未找到匹配内容")
-                            .foregroundColor(.secondary)
+                        Text("║  NO MATCH FOUND  ║")
+                            .font(PixelTheme.pixelFont(size: 12))
+                            .foregroundColor(PixelTheme.textSecondary)
                     }
+                    Text("╚══════════════════╝")
+                        .font(PixelTheme.pixelFont(size: 12))
+                        .foregroundColor(PixelTheme.border)
                     Spacer()
                 }
                 .frame(maxHeight: .infinity)
             } else {
-                List {
-                    ForEach(filteredHistory) { item in
-                        ClipboardRow(
-                            item: item,
-                            onCopy: {
-                                if item.contentType == .text {
-                                    onCopy(item.content)
-                                } else if let image = item.image {
-                                    onCopyImage?(image)
+                ScrollView {
+                    LazyVStack(spacing: 4) {
+                        ForEach(filteredHistory) { item in
+                            PixelClipboardRow(
+                                item: item,
+                                onCopy: {
+                                    if item.contentType == .text {
+                                        onCopy(item.content)
+                                    } else if let image = item.image {
+                                        onCopyImage?(image)
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
                 }
             }
         }
     }
 }
 
-// MARK: - Clipboard Row
-struct ClipboardRow: View {
+// MARK: - Pixel Tab Button
+struct PixelTabButton: View {
+    let icon: String
+    let title: String
+    let isSelected: Bool
+    var action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .bold))
+                Text(title)
+                    .font(PixelTheme.pixelFont(size: 11))
+            }
+            .foregroundColor(isSelected ? PixelTheme.background : PixelTheme.textSecondary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(
+                Rectangle()
+                    .fill(isSelected ? PixelTheme.primary : PixelTheme.cardBackground)
+            )
+            .overlay(
+                Rectangle()
+                    .stroke(isSelected ? PixelTheme.primary : PixelTheme.border, lineWidth: 2)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Pixel Clipboard Row
+struct PixelClipboardRow: View {
     let item: ClipboardItem
     var onCopy: () -> Void
     
@@ -157,28 +258,29 @@ struct ClipboardRow: View {
     
     var body: some View {
         Button(action: onCopy) {
-            HStack {
-                // 根据类型显示不同内容
+            HStack(spacing: 8) {
+                // Type indicator
+                Text(item.contentType == .image ? "[IMG]" : "[TXT]")
+                    .font(PixelTheme.pixelFont(size: 10))
+                    .foregroundColor(item.contentType == .image ? PixelTheme.secondary : PixelTheme.accent)
+                
+                // Content
                 if item.contentType == .image {
-                    // 图片类型：显示小缩略图和描述
-                    if let thumbnail = item.thumbnail(maxSize: 32) {
+                    if let thumbnail = item.thumbnail(maxSize: 24) {
                         Image(nsImage: thumbnail)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 32, height: 32)
-                            .cornerRadius(4)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 4)
-                                    .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
-                            )
+                            .frame(width: 24, height: 24)
+                            .pixelBorder(color: PixelTheme.border, width: 1)
                     }
-                    
                     Text(item.content)
-                        .foregroundColor(.secondary)
+                        .font(PixelTheme.pixelFont(size: 12))
+                        .foregroundColor(PixelTheme.textSecondary)
                         .lineLimit(1)
                 } else {
-                    // 文本类型
                     Text(item.content.trimmingCharacters(in: .whitespacesAndNewlines))
+                        .font(PixelTheme.pixelFont(size: 12))
+                        .foregroundColor(PixelTheme.textPrimary)
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
@@ -186,25 +288,23 @@ struct ClipboardRow: View {
                 Spacer()
                 
                 if isHovering {
-                    Image(systemName: "doc.on.doc")
-                        .foregroundColor(.secondary)
-                        .font(.caption)
+                    Text("[COPY]")
+                        .font(PixelTheme.pixelFont(size: 10))
+                        .foregroundColor(PixelTheme.primary)
                 }
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
-            .background(isHovering ? Color.accentColor.opacity(0.15) : Color.clear)
-            .cornerRadius(6)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(isHovering ? PixelTheme.primary.opacity(0.15) : PixelTheme.cardBackground)
+            .pixelBorder(color: isHovering ? PixelTheme.primary : PixelTheme.border, width: 1)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .onHover { hovering in
             isHovering = hovering
             
-            // 图片悬停预览逻辑
             if item.contentType == .image {
                 if hovering {
-                    // 延迟显示预览
                     hoverTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { _ in
                         showPreview = true
                     }
@@ -216,29 +316,34 @@ struct ClipboardRow: View {
             }
         }
         .popover(isPresented: $showPreview, arrowEdge: .trailing) {
-            ImagePreviewPopover(item: item)
+            PixelImagePreview(item: item)
         }
     }
 }
 
-// MARK: - Image Preview Popover
-struct ImagePreviewPopover: View {
+// MARK: - Pixel Image Preview
+struct PixelImagePreview: View {
     let item: ClipboardItem
     
     var body: some View {
         VStack(spacing: 8) {
+            Text("[ IMAGE PREVIEW ]")
+                .font(PixelTheme.pixelFontBold(size: 12))
+                .foregroundColor(PixelTheme.primary)
+            
             if let image = item.image {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(maxWidth: 300, maxHeight: 300)
-                    .cornerRadius(8)
+                    .frame(maxWidth: 280, maxHeight: 280)
+                    .pixelBorder()
             }
             
             Text(item.content)
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(PixelTheme.pixelFont(size: 11))
+                .foregroundColor(PixelTheme.textSecondary)
         }
         .padding(12)
+        .background(PixelTheme.background)
     }
 }
