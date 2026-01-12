@@ -69,10 +69,8 @@ bundle: $(EXECUTABLE)
 	@echo '    <key>LSMinimumSystemVersion</key><string>12.0</string>' >> $(APP_CONTENTS)/Info.plist
 	@echo '</dict>' >> $(APP_CONTENTS)/Info.plist
 	@echo '</plist>' >> $(APP_CONTENTS)/Info.plist
-	@if [ -f "$(ICON_SVG)" ]; then \
-		echo "🎨 生成应用图标..."; \
-		./create_icns.sh 2>/dev/null || true; \
-	fi
+	@echo "🎨 生成应用图标..."
+	@./create_icns.sh
 	@echo "🔐 签名 App Bundle..."
 	@codesign --force --deep --sign - $(APP_BUNDLE)
 	@echo "🎉 App Bundle 创建完成: $(APP_BUNDLE)"
