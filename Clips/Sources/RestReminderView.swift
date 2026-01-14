@@ -232,8 +232,8 @@ struct RestReminderView: View {
         }
     }
     
-    private let workOptions = [15, 20, 25, 30, 45, 60, 90]
-    private let restOptions = [3, 5, 10, 15, 20]
+    private let workOptions = [1, 5, 15, 20, 25, 30, 45, 60, 90]
+    private let restOptions = [1, 3, 5, 10, 15, 20]
     
     private func incrementWork() {
         if let idx = workOptions.firstIndex(of: store.workDurationMinutes), idx < workOptions.count - 1 {

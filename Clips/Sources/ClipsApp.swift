@@ -87,7 +87,7 @@ class HotkeyManager {
     }
 }
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     var statusItem: NSStatusItem?
     var popover: NSPopover!
     var floatingWindow: NSWindow?
@@ -99,6 +99,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let reminderStore = RestReminderStore.shared
     
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // 设置通知代理，确保前台也能显示通知
+        UNUserNotificationCenter.current().delegate = self
+        
         // Initialize Core Services
         historyStore = HistoryStore(clipboardService: clipboardService)
         
@@ -372,5 +375,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func closePopover(sender: AnyObject?) {
         popover.performClose(sender)
+    }
+    
+    // MARK: - UNUserNotificationCenterDelegate
+    
+    // 当应用在前台时也显示通知
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        // 显示横幅、播放声音
+        completionHandler([.banner, .sound])
+    }
+    
+    // 用户点击通知时的处理
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        // 激活应用
+        NSApp.activate(ignoringOtherApps: true)
+        completionHandler()
     }
 }

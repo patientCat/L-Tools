@@ -1,5 +1,6 @@
 import Foundation
 import UserNotifications
+import AppKit
 
 class RestReminderStore: ObservableObject {
     static let shared = RestReminderStore()
@@ -21,9 +22,11 @@ class RestReminderStore: ObservableObject {
     @Published private(set) var isRunning: Bool = false
     @Published private(set) var remainingSeconds: Int = 0
     @Published private(set) var isRestTime: Bool = false
+    @Published private(set) var isWaitingForRestConfirm: Bool = false  // 等待用户确认开始休息
     
     private var timer: Timer?
     private var notificationAuthorized: Bool = false
+    private var restAlertWindow: NSWindow?
     
     private init() {
         load()
@@ -54,6 +57,7 @@ class RestReminderStore: ObservableObject {
         
         isRunning = true
         isRestTime = false
+        isWaitingForRestConfirm = false
         remainingSeconds = workDurationMinutes * 60
         
         timer?.invalidate()
@@ -70,9 +74,13 @@ class RestReminderStore: ObservableObject {
         isRunning = false
         remainingSeconds = 0
         isRestTime = false
+        isWaitingForRestConfirm = false
         
         // Cancel pending notifications
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        
+        // 关闭弹窗
+        closeRestAlert()
         
         print("⏹️ 计时已停止")
     }
@@ -102,6 +110,28 @@ class RestReminderStore: ObservableObject {
         startTimer()
     }
     
+    // 用户确认开始休息
+    func confirmStartRest() {
+        guard isWaitingForRestConfirm else { return }
+        
+        closeRestAlert()
+        isWaitingForRestConfirm = false
+        startRestTimer()
+        
+        print("☕️ 用户确认开始休息")
+    }
+    
+    // 用户选择跳过休息
+    func skipRestConfirm() {
+        guard isWaitingForRestConfirm else { return }
+        
+        closeRestAlert()
+        isWaitingForRestConfirm = false
+        startTimer()
+        
+        print("⏭️ 用户跳过休息，继续工作")
+    }
+    
     private func tick() {
         guard remainingSeconds > 0 else {
             if isRestTime {
@@ -109,9 +139,14 @@ class RestReminderStore: ObservableObject {
                 sendNotification(title: "休息结束", body: "开始新一轮工作吧！💪")
                 startTimer()
             } else {
-                // Work finished, time to rest
+                // Work finished, show rest alert
+                timer?.invalidate()
+                timer = nil
+                isRunning = false
+                isWaitingForRestConfirm = true
+                
                 sendNotification(title: "该休息了！", body: "你已经工作了 \(workDurationMinutes) 分钟，休息 \(restDurationMinutes) 分钟吧 ☕️")
-                startRestTimer()
+                showRestAlert()
             }
             return
         }
@@ -121,16 +156,60 @@ class RestReminderStore: ObservableObject {
     
     private func startRestTimer() {
         isRestTime = true
+        isRunning = true
         remainingSeconds = restDurationMinutes * 60
+        
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.tick()
+        }
+        
         print("☕️ 休息时间开始: \(restDurationMinutes) 分钟")
     }
     
     private func updateTimer() {
-        if isEnabled && !isRunning {
+        if isEnabled && !isRunning && !isWaitingForRestConfirm {
             startTimer()
         } else if !isEnabled && isRunning {
             stopTimer()
         }
+    }
+    
+    // MARK: - Rest Alert Window
+    
+    private func showRestAlert() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            // 如果已经有弹窗，先关闭
+            self.closeRestAlert()
+            
+            let alert = NSAlert()
+            alert.messageText = "该休息了！☕️"
+            alert.informativeText = "你已经工作了 \(self.workDurationMinutes) 分钟。\n建议休息 \(self.restDurationMinutes) 分钟。"
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "开始休息")
+            alert.addButton(withTitle: "跳过休息")
+            
+            // 播放提示音
+            NSSound.beep()
+            
+            // 激活应用
+            NSApp.activate(ignoringOtherApps: true)
+            
+            let response = alert.runModal()
+            
+            if response == .alertFirstButtonReturn {
+                self.confirmStartRest()
+            } else {
+                self.skipRestConfirm()
+            }
+        }
+    }
+    
+    private func closeRestAlert() {
+        restAlertWindow?.close()
+        restAlertWindow = nil
     }
     
     // MARK: - Notification
@@ -170,6 +249,8 @@ class RestReminderStore: ObservableObject {
     var statusText: String {
         if !isEnabled {
             return "未启用"
+        } else if isWaitingForRestConfirm {
+            return "等待休息"
         } else if !isRunning {
             return "已暂停"
         } else if isRestTime {
