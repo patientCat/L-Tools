@@ -3,6 +3,7 @@ import AppKit
 
 enum ClipsTab: String, CaseIterable {
     case history = "CLIPS"
+    case favorites = "FAVS"
     case keyValue = "KEYS"
     case json = "JSON"
     case reminder = "TIMER"
@@ -74,6 +75,8 @@ struct MenuBarView: View {
                 
                 if selectedTab == .history {
                     historyView
+                } else if selectedTab == .favorites {
+                    favoritesView
                 } else if selectedTab == .keyValue {
                     KeyValueView(kvStore: kvStore, onCopyValue: onCopy)
                 } else if selectedTab == .json {
@@ -110,13 +113,14 @@ struct MenuBarView: View {
             .background(PixelTheme.headerBackground)
         }
         .background(PixelTheme.background)
-        .frame(width: 450, height: 500)
+        .frame(minWidth: 450, maxWidth: .infinity, minHeight: 550, maxHeight: .infinity)
     }
     
     // MARK: - Tab Icon
     private func tabIcon(for tab: ClipsTab) -> String {
         switch tab {
         case .history: return "doc.on.clipboard"
+        case .favorites: return "star.fill"
         case .keyValue: return "key"
         case .json: return "curlybraces"
         case .reminder: return "bell"
@@ -202,12 +206,86 @@ struct MenuBarView: View {
                         ForEach(filteredHistory) { item in
                             PixelClipboardRow(
                                 item: item,
+                                showFavoriteButton: true,
                                 onCopy: {
                                     if item.contentType == .text {
                                         onCopy(item.content)
                                     } else if let image = item.image {
                                         onCopyImage?(image)
                                     }
+                                },
+                                onToggleFavorite: {
+                                    historyStore.toggleFavorite(for: item)
+                                }
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Favorites View
+    private var favoritesView: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text("> FAVORITES")
+                    .font(PixelTheme.pixelFontBold(size: 12))
+                    .foregroundColor(PixelTheme.primary)
+                Text("[\(historyStore.favorites.count)]")
+                    .font(PixelTheme.pixelFont(size: 12))
+                    .foregroundColor(PixelTheme.accent)
+                Spacer()
+                Button(action: { historyStore.clearFavorites() }) {
+                    Text("[CLR]")
+                        .font(PixelTheme.pixelFont(size: 11))
+                        .foregroundColor(PixelTheme.danger)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            
+            PixelDivider()
+                .padding(.vertical, 4)
+            
+            if historyStore.favorites.isEmpty {
+                VStack(spacing: 8) {
+                    Spacer()
+                    Text("╔══════════════════╗")
+                        .font(PixelTheme.pixelFont(size: 12))
+                        .foregroundColor(PixelTheme.border)
+                    Text("║  NO FAVORITES    ║")
+                        .font(PixelTheme.pixelFont(size: 12))
+                        .foregroundColor(PixelTheme.textSecondary)
+                    Text("║  STAR TO ADD     ║")
+                        .font(PixelTheme.pixelFont(size: 12))
+                        .foregroundColor(PixelTheme.textMuted)
+                    Text("╚══════════════════╝")
+                        .font(PixelTheme.pixelFont(size: 12))
+                        .foregroundColor(PixelTheme.border)
+                    Spacer()
+                }
+                .frame(maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 4) {
+                        ForEach(historyStore.favorites) { item in
+                            PixelClipboardRow(
+                                item: item,
+                                showFavoriteButton: true,
+                                onCopy: {
+                                    if item.contentType == .text {
+                                        onCopy(item.content)
+                                    } else if let image = item.image {
+                                        onCopyImage?(image)
+                                    }
+                                },
+                                onToggleFavorite: {
+                                    historyStore.toggleFavorite(for: item)
                                 }
                             )
                         }
@@ -254,11 +332,20 @@ struct PixelTabButton: View {
 // MARK: - Pixel Clipboard Row
 struct PixelClipboardRow: View {
     let item: ClipboardItem
+    let showFavoriteButton: Bool
     var onCopy: () -> Void
+    var onToggleFavorite: (() -> Void)?
     
     @State private var isHovering = false
     @State private var showPreview = false
     @State private var hoverTimer: Timer?
+    
+    init(item: ClipboardItem, showFavoriteButton: Bool = false, onCopy: @escaping () -> Void, onToggleFavorite: (() -> Void)? = nil) {
+        self.item = item
+        self.showFavoriteButton = showFavoriteButton
+        self.onCopy = onCopy
+        self.onToggleFavorite = onToggleFavorite
+    }
     
     var body: some View {
         Button(action: onCopy) {
@@ -280,25 +367,45 @@ struct PixelClipboardRow: View {
                     Text(item.content)
                         .font(PixelTheme.pixelFont(size: 12))
                         .foregroundColor(PixelTheme.textSecondary)
-                        .lineLimit(1)
+                        .lineLimit(3)
                 } else {
                     Text(item.content.trimmingCharacters(in: .whitespacesAndNewlines))
                         .font(PixelTheme.pixelFont(size: 12))
                         .foregroundColor(PixelTheme.textPrimary)
-                        .lineLimit(1)
+                        .lineLimit(3)
                         .truncationMode(.tail)
                 }
                 
                 Spacer()
                 
-                if isHovering {
-                    Text("[COPY]")
-                        .font(PixelTheme.pixelFont(size: 10))
-                        .foregroundColor(PixelTheme.primary)
+                HStack(spacing: 8) {
+                    if showFavoriteButton {
+                        Button(action: {
+                            onToggleFavorite?()
+                        }) {
+                            Image(systemName: item.isFavorite ? "star.fill" : "star")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(item.isFavorite ? PixelTheme.accent : PixelTheme.textMuted)
+                        }
+                        .buttonStyle(.plain)
+                        .onHover { hovering in
+                            if hovering {
+                                NSCursor.pointingHand.push()
+                            } else {
+                                NSCursor.pop()
+                            }
+                        }
+                    }
+                    
+                    if isHovering {
+                        Text("[COPY]")
+                            .font(PixelTheme.pixelFont(size: 10))
+                            .foregroundColor(PixelTheme.primary)
+                    }
                 }
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 8)
+            .padding(.vertical, 12)
             .background(isHovering ? PixelTheme.primary.opacity(0.15) : PixelTheme.cardBackground)
             .pixelBorder(color: isHovering ? PixelTheme.primary : PixelTheme.border, width: 1)
             .contentShape(Rectangle())
