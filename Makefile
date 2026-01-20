@@ -5,24 +5,24 @@ SWIFTC = swiftc
 SWIFT_FLAGS = -O -framework AppKit -framework Carbon -framework UserNotifications
 
 # 目录
-SRC_DIR = Clips/Sources
+SRC_DIR = L-Tools/Sources
 APP_BUNDLE = L-Tools.app
 APP_CONTENTS = $(APP_BUNDLE)/Contents
 APP_MACOS = $(APP_CONTENTS)/MacOS
 APP_RESOURCES = $(APP_CONTENTS)/Resources
 
 # 源文件
-SOURCES = $(SRC_DIR)/Models.swift \
-          $(SRC_DIR)/ClipboardService.swift \
-          $(SRC_DIR)/HistoryStore.swift \
-          $(SRC_DIR)/KeyValueStore.swift \
-          $(SRC_DIR)/PixelTheme.swift \
-          $(SRC_DIR)/KeyValueView.swift \
-          $(SRC_DIR)/JsonFormatterView.swift \
-          $(SRC_DIR)/RestReminderStore.swift \
-          $(SRC_DIR)/RestReminderView.swift \
-          $(SRC_DIR)/MenuBarView.swift \
-          $(SRC_DIR)/ClipsApp.swift
+SOURCES = $(SRC_DIR)/Models/Models.swift \
+          $(SRC_DIR)/Services/ClipboardService.swift \
+          $(SRC_DIR)/Services/HistoryStore.swift \
+          $(SRC_DIR)/Services/KeyValueStore.swift \
+          $(SRC_DIR)/Services/RestReminderStore.swift \
+          $(SRC_DIR)/Theme/PixelTheme.swift \
+          $(SRC_DIR)/Views/KeyValueView.swift \
+          $(SRC_DIR)/Views/JsonFormatterView.swift \
+          $(SRC_DIR)/Views/RestReminderView.swift \
+          $(SRC_DIR)/Views/MenuBarView.swift \
+          $(SRC_DIR)/App/LToolsApp.swift
 
 # 输出
 EXECUTABLE = LToolsApp
