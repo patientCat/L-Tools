@@ -16,6 +16,13 @@
 
 从 [GitHub Releases](https://github.com/patientCat/Clips/releases) 下载最新的 DMG 文件，双击安装即可使用。
 
+如何安装
+![步骤一](/resources/install_step1.png)
+因为我不是苹果认证的开发者所以安装会弹出
+![步骤二](/resources/install_step2.png)
+请进行
+![步骤三](/resources/install_step3.png)
+
 ### 方法 2: 直接运行
 ```bash
 # 双击运行
