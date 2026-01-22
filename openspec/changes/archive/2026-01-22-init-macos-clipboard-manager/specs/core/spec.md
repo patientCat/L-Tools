@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: Application Entry Point
-The application must launch as a Menu Bar agent without a Dock icon.
+The application MUST launch as a Menu Bar agent without a Dock icon.
 
 #### Scenario: Launch
 - When the user starts the application, it appears **only** in the macOS menu bar (status bar) with an icon.
@@ -11,7 +11,7 @@ The application must launch as a Menu Bar agent without a Dock icon.
 - It does **not** open a main window by default.
 
 ### Requirement: Clipboard Monitoring
-The application must detect when plain text is copied to the system clipboard from any other application.
+The application MUST detect when plain text is copied to the system clipboard from any other application.
 
 #### Scenario: Copying Text
 - Given the application is running
@@ -25,7 +25,7 @@ The application must detect when plain text is copied to the system clipboard fr
 - Then the application does **not** create a duplicate entry at the top of the list (it may update the timestamp).
 
 ### Requirement: History Storage
-The application must persist the clipboard history between launches.
+The application MUST persist the clipboard history between launches.
 
 #### Scenario: App Restart
 - Given the history contains "Item A" and "Item B"
@@ -33,7 +33,7 @@ The application must persist the clipboard history between launches.
 - Then the history still contains "Item A" and "Item B".
 
 ### Requirement: Menu Bar Interface
-The application must provide a visual list of clipboard history accessible from the menu bar.
+The application MUST provide a visual list of clipboard history accessible from the menu bar.
 
 #### Scenario: Viewing History
 - When the user clicks the menu bar icon

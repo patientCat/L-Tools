@@ -7,12 +7,14 @@ enum ClipsTab: String, CaseIterable {
     case keyValue = "KEYS"
     case json = "JSON"
     case reminder = "TIMER"
+    case shelf = "SHELF"
 }
 
 struct MenuBarView: View {
     @ObservedObject var historyStore: HistoryStore
     @ObservedObject var kvStore: KeyValueStore
     @ObservedObject var reminderStore: RestReminderStore
+    @ObservedObject var fileShelfStore: FileShelfStore
     var onCopy: (String) -> Void
     var onCopyImage: ((NSImage) -> Void)?
     var onQuit: () -> Void
@@ -85,8 +87,10 @@ struct MenuBarView: View {
                     KeyValueView(kvStore: kvStore, onCopyValue: onCopy)
                 } else if selectedTab == .json {
                     JsonFormatterView(onCopy: onCopy)
-                } else {
+                } else if selectedTab == .reminder {
                     RestReminderView(store: reminderStore)
+                } else {
+                    FileShelfView(store: fileShelfStore)
                 }
             }
             
@@ -128,6 +132,7 @@ struct MenuBarView: View {
         case .keyValue: return "key"
         case .json: return "curlybraces"
         case .reminder: return "bell"
+        case .shelf: return "folder"
         }
     }
     

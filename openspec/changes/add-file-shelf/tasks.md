@@ -1,0 +1,7 @@
+- [x] Create `FileShelfStore.swift` in `Sources/Services/` <!-- id: 0 -->
+- [x] Create `FileShelfView.swift` in `Sources/Views/` <!-- id: 1 -->
+- [x] Update `MenuBarView.swift` to include the new tab and view <!-- id: 2 -->
+- [x] Update `ClipsApp.swift` / `AppDelegate.swift` to initialize `FileShelfStore` <!-- id: 3 -->
+- [x] Implement file move logic in `FileShelfStore` (ingest vs reference) <!-- id: 5 -->
+- [x] Implement multi-selection and batch drag in `FileShelfView` (switch to `List`?) <!-- id: 6 -->
+- [x] Verify drag and drop functionality (manual test) <!-- id: 4 -->

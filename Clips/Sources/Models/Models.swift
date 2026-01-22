@@ -81,3 +81,15 @@ struct ClipboardItem: Identifiable, Codable, Equatable {
         }
     }
 }
+
+struct ShelvedFile: Identifiable, Codable, Equatable {
+    let id: UUID
+    let url: URL
+    let addedDate: Date
+    
+    init(id: UUID = UUID(), url: URL, addedDate: Date = Date()) {
+        self.id = id
+        self.url = url
+        self.addedDate = addedDate
+    }
+}
