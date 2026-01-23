@@ -19,6 +19,8 @@ SOURCES = $(SRC_DIR)/Models/Models.swift \
           $(SRC_DIR)/Services/RestReminderStore.swift \
           $(SRC_DIR)/Services/FileShelfStore.swift \
           $(SRC_DIR)/Theme/PixelTheme.swift \
+          $(SRC_DIR)/Theme/TerminalTheme.swift \
+          $(SRC_DIR)/Theme/ThemeManager.swift \
           $(SRC_DIR)/Views/KeyValueView.swift \
           $(SRC_DIR)/Views/JsonFormatterView.swift \
           $(SRC_DIR)/Views/RestReminderView.swift \

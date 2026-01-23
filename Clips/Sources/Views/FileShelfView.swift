@@ -65,11 +65,32 @@ struct FileShelfView: View {
                                 .listRowInsets(EdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8))
                                 .contextMenu {
                                     Button("Delete") {
-                                        store.removeFile(id: file.id)
+                                        if selection.contains(file.id) && selection.count > 1 {
+                                            // Delete all selected files
+                                            for id in selection {
+                                                store.removeFile(id: id)
+                                            }
+                                            selection.removeAll()
+                                        } else {
+                                            store.removeFile(id: file.id)
+                                        }
                                     }
                                 }
                                 .onDrag {
-                                    return NSItemProvider(object: file.url as NSURL)
+                                    // If this file is in selection and multiple selected, drag all
+                                    if selection.contains(file.id) && selection.count > 1 {
+                                        let selectedFiles = store.files.filter { selection.contains($0.id) }
+                                        let urls = selectedFiles.map { $0.url as NSURL }
+                                        // Register multiple URLs via pasteboard item
+                                        let provider = NSItemProvider()
+                                        for url in urls {
+                                            provider.registerObject(url, visibility: .all)
+                                        }
+                                        return provider
+                                    } else {
+                                        // Single file drag
+                                        return NSItemProvider(object: file.url as NSURL)
+                                    }
                                 }
                         }
                     }
